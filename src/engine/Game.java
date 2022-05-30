@@ -137,6 +137,9 @@ public class Game {
 						Integer.parseInt(content[3]), ar, Integer.parseInt(content[6]), Integer.parseInt(content[7]));
 				break;
 			}
+			if(availableAbilities == null) {
+				availableAbilities = new ArrayList<Ability>();
+			}
 			availableAbilities.add(a);
 			line = br.readLine();
 		}
@@ -171,6 +174,9 @@ public class Game {
 			c.getAbilities().add(findAbilityByName(content[8]));
 			c.getAbilities().add(findAbilityByName(content[9]));
 			c.getAbilities().add(findAbilityByName(content[10]));
+			if(availableChampions == null) {
+				availableChampions = new ArrayList<Champion>();
+			}
 			availableChampions.add(c);
 			line = br.readLine();
 		}
