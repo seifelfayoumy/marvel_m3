@@ -346,6 +346,27 @@ public class GameGUI implements ActionListener, ViewListener {
 		return board;
 	}
 	
+	public JPanel currentTurn() {
+		JPanel currentTurn = new JPanel();
+		currentTurn.setLayout(new BoxLayout(currentTurn,BoxLayout.Y_AXIS));
+		boolean firstPlayer = false;
+		for(Champion c: game.getFirstPlayer().getTeam()) {
+			if(c == game.getCurrentChampion()) {
+				firstPlayer = true;
+			}
+		}
+		String name;
+		if(firstPlayer) {
+			name = game.getFirstPlayer().getName();
+		}
+		else {
+			name = game.getSecondPlayer().getName();
+		}
+		JLabel info = new JLabel("Current Turn: " + name);
+		currentTurn.add(info);
+		return currentTurn;
+	}
+	
 	public void startGame() {
 		this.game = new Game(playerOne,playerTwo);
 		
@@ -390,5 +411,28 @@ public class GameGUI implements ActionListener, ViewListener {
 		mainView.add(board, BorderLayout.CENTER);
 		mainView.revalidate();
 		mainView.repaint();
+		
+		JPanel turnOrder = new JPanel();
+		turnOrder.setLayout(new BoxLayout(turnOrder,BoxLayout.Y_AXIS));
+		JLabel current = new JLabel("Current: " + game.getCurrentChampion().getName());
+		turnOrder.add(current);
+		if(game.getTurnOrder().size()>1) {
+			Champion c = game.getCurrentChampion();
+			game.getTurnOrder().remove();
+			JLabel next = new JLabel("Next: " + game.getCurrentChampion().getName());
+			turnOrder.add(next);
+			game.getTurnOrder().insert(c);
+		}
+		
+		mainView.add(turnOrder, BorderLayout.LINE_END);
+		mainView.revalidate();
+		mainView.repaint();
+		
+		JPanel currentTurn = currentTurn();
+		
+		mainView.add(currentTurn, BorderLayout.LINE_START);
+		mainView.revalidate();
+		mainView.repaint();
+		
 	}
 }
