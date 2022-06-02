@@ -7,6 +7,10 @@ import javax.swing.*;
 
 import engine.Game;
 import engine.Player;
+import model.abilities.Ability;
+import model.abilities.CrowdControlAbility;
+import model.abilities.DamagingAbility;
+import model.abilities.HealingAbility;
 import model.effects.Effect;
 import model.world.AntiHero;
 import model.world.Champion;
@@ -364,7 +368,95 @@ public class GameGUI implements ActionListener, ViewListener {
 		}
 		JLabel info = new JLabel("Current Turn: " + name);
 		currentTurn.add(info);
+		
+		JPanel currentChamp = generateCurrentChamp(game.getCurrentChampion());
+		currentTurn.add(currentChamp);
+		
+		
+		JLabel abilities = new JLabel("Abilities:");
+		currentTurn.add(abilities);
+		for(Ability a: game.getCurrentChampion().getAbilities()) {
+			JPanel ability = generateAbility(a);
+			currentTurn.add(ability);
+		}
 		return currentTurn;
+	}
+	
+	public JPanel generateCurrentChamp(Champion c) {
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+		panel.setBorder(BorderFactory.createLineBorder(Color.black));
+		JLabel name = new JLabel("Name: " + c.getName());
+		panel.add(name);
+		String type = "";
+		if(c instanceof Hero) {
+			type = "Hero";
+		}
+		else if(c instanceof Villain) {
+			type = "Villain";
+		}
+		else if(c instanceof AntiHero) {
+			type = "AntiHero";
+		}
+		JLabel typeName = new JLabel("Type: " + type);
+		panel.add(typeName);
+		JLabel hp = new JLabel("Current HP: " + c.getCurrentHP());
+		panel.add(hp);
+		JLabel mana = new JLabel("Mana: " + c.getMana());
+		panel.add(mana);
+		JLabel actions= new JLabel("Action Points: " + c.getCurrentActionPoints());
+		panel.add(actions);
+		JLabel attackDamage= new JLabel("Attack Damage: " + c.getAttackDamage());
+		panel.add(attackDamage);
+		JLabel attackRange = new JLabel("Attack Range: " + c.getAttackRange());
+		panel.add(attackRange);
+		
+
+
+		
+		return panel;
+
+	}
+	
+	public JPanel generateAbility(Ability c) {
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+		panel.setBorder(BorderFactory.createLineBorder(Color.black));
+		JLabel name = new JLabel("Name: " + c.getName());
+		panel.add(name);
+		String type = "";
+		JLabel amount = new JLabel();
+		if(c instanceof DamagingAbility) {
+			type = "Damaging Ability";
+			amount = new JLabel("Damage Amount: " + ((DamagingAbility) c).getDamageAmount());
+		}
+		else if(c instanceof HealingAbility) {
+			type = "Healing Ability";
+			amount = new JLabel("Heal Amount: " + ((HealingAbility) c).getHealAmount());
+		}
+		else if(c instanceof CrowdControlAbility) {
+			type = "Crowd Control Ability";
+			amount = new JLabel("Effect: " + ((CrowdControlAbility) c).getEffect().getName());
+		}
+		JLabel typeName = new JLabel("Type: " + type);
+		panel.add(typeName);
+		JLabel hp = new JLabel("Area of Effect: " + c.getCastArea().toString());
+		panel.add(hp);
+		JLabel mana = new JLabel("Range: " + c.getCastRange());
+		panel.add(mana);
+		JLabel actions= new JLabel("Mana Cost: " + c.getManaCost());
+		panel.add(actions);
+		JLabel attackDamage= new JLabel("Current Cooldown: " + c.getCurrentCooldown());
+		panel.add(attackDamage);
+		JLabel attackRange = new JLabel("Base Cooldown: " + c.getBaseCooldown());
+		panel.add(attackRange);
+		
+
+		panel.add(amount);
+
+		
+		return panel;
+
 	}
 	
 	public void startGame() {
@@ -424,11 +516,12 @@ public class GameGUI implements ActionListener, ViewListener {
 			game.getTurnOrder().insert(c);
 		}
 		
-		mainView.add(turnOrder, BorderLayout.LINE_END);
+		mainView.add(turnOrder, BorderLayout.LINE_END); 
 		mainView.revalidate();
 		mainView.repaint();
 		
 		JPanel currentTurn = currentTurn();
+
 		
 		mainView.add(currentTurn, BorderLayout.LINE_START);
 		mainView.revalidate();
