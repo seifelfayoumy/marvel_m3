@@ -7,7 +7,15 @@ import javax.swing.*;
 
 import engine.Game;
 import engine.Player;
+import exceptions.AbilityUseException;
+import exceptions.ChampionDisarmedException;
+import exceptions.InvalidTargetException;
+import exceptions.LeaderAbilityAlreadyUsedException;
+import exceptions.LeaderNotCurrentException;
+import exceptions.NotEnoughResourcesException;
+import exceptions.UnallowedMovementException;
 import model.abilities.Ability;
+import model.abilities.AreaOfEffect;
 import model.abilities.CrowdControlAbility;
 import model.abilities.DamagingAbility;
 import model.abilities.HealingAbility;
@@ -15,6 +23,7 @@ import model.effects.Effect;
 import model.world.AntiHero;
 import model.world.Champion;
 import model.world.Cover;
+import model.world.Direction;
 import model.world.Hero;
 import model.world.Villain;
 
@@ -35,6 +44,8 @@ public class GameGUI implements ActionListener, ViewListener {
 		mainView = new MainView(this,this);
 		//mainView.setLayout(new BoxLayout(mainView,BoxLayout.Y_AXIS));
 		//mainView.setButtonListener(this);
+//		mainView.setExtendedState(JFrame.MAXIMIZED_BOTH); 
+//		mainView.setUndecorated(true);
 		mainView.setVisible(true);
 	}
 	
@@ -71,13 +82,13 @@ public class GameGUI implements ActionListener, ViewListener {
 			Game.loadAbilities("Abilities.csv");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(mainView,e.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
 		}
 		try {
 			Game.loadChampions("Champions.csv");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(mainView,e.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
 		}
 		playerOneSelection();
 	
@@ -326,10 +337,11 @@ public class GameGUI implements ActionListener, ViewListener {
 	public JPanel board() {
 		JPanel board = new JPanel();
 		board.setLayout(new GridLayout(5,5,5,5));
-		for(int i = 0;i<5;i++) {
+		for(int i = 4;i>=0;i--) {
 			for(int j =0; j<5;j++) {
 				JPanel p = new JPanel();
 				p.setBorder(BorderFactory.createLineBorder(Color.black));
+				//p.add(new JLabel("" + i + " "+ j));			
 				if(game.getBoard()[i][j] != null) {
 					if(game.getBoard()[i][j] instanceof Champion) {
 						Champion c = (Champion) game.getBoard()[i][j];
@@ -350,9 +362,24 @@ public class GameGUI implements ActionListener, ViewListener {
 		return board;
 	}
 	
+	public JPanel generateEffect(Effect e) {
+		JPanel effect = new JPanel();
+		effect.setLayout(new BoxLayout(effect,BoxLayout.Y_AXIS));
+		effect.setBorder(BorderFactory.createLineBorder(Color.black));
+		
+		JLabel name = new JLabel("Effect Name: " + e.getName());
+		effect.add(name);
+		JLabel duration = new JLabel("Duration: " + e.getDuration());
+		effect.add(duration);
+		
+		return effect;
+	}
+	
 	public JPanel currentTurn() {
 		JPanel currentTurn = new JPanel();
+		JPanel allTurn = new JPanel();
 		currentTurn.setLayout(new BoxLayout(currentTurn,BoxLayout.Y_AXIS));
+		allTurn.setLayout(new BorderLayout());
 		boolean firstPlayer = false;
 		for(Champion c: game.getFirstPlayer().getTeam()) {
 			if(c == game.getCurrentChampion()) {
@@ -379,7 +406,163 @@ public class GameGUI implements ActionListener, ViewListener {
 			JPanel ability = generateAbility(a);
 			currentTurn.add(ability);
 		}
-		return currentTurn;
+		allTurn.add(currentTurn,BorderLayout.LINE_START);
+		
+		JPanel effects = new JPanel();
+		effects.setLayout(new BoxLayout(effects,BoxLayout.Y_AXIS));
+		
+		JLabel effectsLabel = new JLabel("Effects(if any):");
+		effects.add(effectsLabel);
+		for(Effect e: game.getCurrentChampion().getAppliedEffects()) {
+			JPanel effect = generateEffect(e);
+			effects.add(effect);
+		}
+		allTurn.add(effects,BorderLayout.LINE_END);
+		
+		
+		return allTurn;
+	}
+	
+	public JPanel generateMoveButtons() {
+		JPanel controls = new JPanel();
+		controls.setLayout(new BoxLayout(controls,BoxLayout.Y_AXIS));
+		
+		JButton up = new JButton("Move Up");
+		controls.add(up);
+		up.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	try {
+					game.move(Direction.UP);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | UnallowedMovementException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);  
+				}
+            }
+        });
+		JButton down = new JButton("Move Down");
+		controls.add(down);
+		down.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	try {
+					game.move(Direction.DOWN);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | UnallowedMovementException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+				}
+            }
+        });
+		JButton right = new JButton("Move Right");
+		controls.add(right);
+		right.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	try {
+					game.move(Direction.RIGHT);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | UnallowedMovementException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+				}
+            }
+        });
+		JButton left = new JButton("Move Left");
+		controls.add(left);
+		left.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	try {
+					game.move(Direction.LEFT);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | UnallowedMovementException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+				}
+            }
+        });
+		return controls;
+	}
+	
+	public JPanel generateAttackButtons() {
+		JPanel controls = new JPanel();
+		controls.setLayout(new BoxLayout(controls,BoxLayout.Y_AXIS));
+		
+		JButton up = new JButton("Attack Up");
+		controls.add(up);
+		up.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+					try {
+						game.attack(Direction.UP);
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (NotEnoughResourcesException | ChampionDisarmedException | InvalidTargetException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+            }
+        });
+		JButton down = new JButton("Attack Down");
+		controls.add(down);
+		down.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+				try {
+					game.attack(Direction.DOWN);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | ChampionDisarmedException | InvalidTargetException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+				}
+            }
+        });
+		JButton right = new JButton("Attack Right");
+		controls.add(right);
+		right.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+				try {
+					game.attack(Direction.RIGHT);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | ChampionDisarmedException | InvalidTargetException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+				}
+            }
+        });
+		JButton left = new JButton("Attack Left");
+		controls.add(left);
+		left.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+				try {
+					game.attack(Direction.LEFT);
+					mainView.getContentPane().removeAll();
+					mainView.revalidate();
+					mainView.repaint();
+					generateGameView();
+				} catch (NotEnoughResourcesException | ChampionDisarmedException | InvalidTargetException e1) {
+					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+				}
+            }
+        });
+		return controls;
 	}
 	
 	public JPanel generateCurrentChamp(Champion c) {
@@ -453,15 +636,146 @@ public class GameGUI implements ActionListener, ViewListener {
 		
 
 		panel.add(amount);
+		
+		if(c.getCastArea() == AreaOfEffect.SELFTARGET || c.getCastArea() == AreaOfEffect.TEAMTARGET || c.getCastArea() == AreaOfEffect.SURROUND) {
+			JButton cast = new JButton("Cast Ability");
+			panel.add(cast);
+			cast.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	            	try {
+						game.castAbility(c);
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (NotEnoughResourcesException | AbilityUseException | CloneNotSupportedException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+	            }
+	        });
+		}
+		if(c.getCastArea() == AreaOfEffect.DIRECTIONAL) {
+			JButton cast = new JButton("Cast Ability Up");
+			panel.add(cast);
+			cast.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	            	try {
+						game.castAbility(c,Direction.UP);
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (NotEnoughResourcesException | AbilityUseException | CloneNotSupportedException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+	            }
+	        });
+			JButton castDown = new JButton("Cast Ability Down");
+			panel.add(castDown);
+			castDown.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	            	try {
+						game.castAbility(c,Direction.DOWN);
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (NotEnoughResourcesException | AbilityUseException | CloneNotSupportedException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+	            }
+	        });
+			JButton castRight = new JButton("Cast Ability Right");
+			panel.add(castRight);
+			castRight.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	            	try {
+						game.castAbility(c,Direction.RIGHT);
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (NotEnoughResourcesException | AbilityUseException | CloneNotSupportedException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+	            }
+	        });
+			JButton castLeft = new JButton("Cast Ability Left");
+			panel.add(castLeft);
+			castLeft.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	            	try {
+						game.castAbility(c,Direction.LEFT);
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (NotEnoughResourcesException | AbilityUseException | CloneNotSupportedException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+	            }
+	        });
+		}
+		if(c.getCastArea() == AreaOfEffect.SINGLETARGET) {
+			JButton cast = new JButton("Cast Ability");
+			panel.add(cast);
+			cast.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	            	String location = JOptionPane.showInputDialog(mainView,"Enter the location of the target(ex: if the target is located in the top right corner, right 44. And if its located in the top left corner, right 40)");  
+	            	if (location == null || !Character.isDigit(location.charAt(0)) || !Character.isDigit(location.charAt(1))){
+	            		JOptionPane.showMessageDialog(mainView,"please enter a valid location","Invalid",JOptionPane.ERROR_MESSAGE); 
+	            		return;
+	            	}
+	            	
+	            	int locationH = Integer.parseInt(location.charAt(0)+"");
+	              	int locationW = Integer.parseInt(location.charAt(1)+"");
+	              	boolean hValid = locationH >=0 && locationH <= 4;
+	              	boolean wValid = locationW >=0 && locationW <= 4;
+	              	if(location.length() != 2 || !hValid || !wValid) {
+	              		JOptionPane.showMessageDialog(mainView,"please enter a valid location","Invalid",JOptionPane.ERROR_MESSAGE); 
+	              		return;
+	              	}
+	            	
+						try {
+							game.castAbility(c,locationH,locationW);
+							mainView.getContentPane().removeAll();
+							mainView.revalidate();
+							mainView.repaint();
+							generateGameView();
+						} catch (NotEnoughResourcesException | AbilityUseException | InvalidTargetException
+								| CloneNotSupportedException e1) {
+							// TODO Auto-generated catch block
+							JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+						}
+	            }
+	        });
+		}
 
 		
 		return panel;
 
 	}
 	
+	public void checkGameOver() {
+		if(game.checkGameOver()!= null) {
+			Player winner = game.checkGameOver();
+			JOptionPane.showMessageDialog(mainView,winner.getName()+ " Won!  (click OK to quit the game)","GAME OVER!",JOptionPane.OK_OPTION);
+			System.exit(0);
+		}
+	}
+	
 	public void startGame() {
 		this.game = new Game(playerOne,playerTwo);
 		
+		generateGameView();
+	}
+	public void generateGameView() {
+		checkGameOver();
 		mainView.setLayout(new BorderLayout());
 		
 		JPanel playerOnePanel = new JPanel();
@@ -515,15 +829,45 @@ public class GameGUI implements ActionListener, ViewListener {
 			turnOrder.add(next);
 			game.getTurnOrder().insert(c);
 		}
+		turnOrder.add(generateMoveButtons());
+		turnOrder.add(generateAttackButtons());
+		JButton useLeader = new JButton("Use Leader Ability");
+		turnOrder.add(useLeader);
+		useLeader.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+					try {
+						game.useLeaderAbility();
+						mainView.getContentPane().removeAll();
+						mainView.revalidate();
+						mainView.repaint();
+						generateGameView();
+					} catch (LeaderNotCurrentException | LeaderAbilityAlreadyUsedException e1) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(mainView,e1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+					}
+            }
+        });
+		JButton endTurn = new JButton("EndTurn");
+		turnOrder.add(endTurn);
+		endTurn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	game.endTurn();
+				mainView.getContentPane().removeAll();
+				mainView.revalidate();
+				mainView.repaint();
+				generateGameView();
+            }
+        });
 		
-		mainView.add(turnOrder, BorderLayout.LINE_END); 
+		JScrollPane paneOrder = new JScrollPane(turnOrder);
+		mainView.add(paneOrder, BorderLayout.LINE_END); 
 		mainView.revalidate();
 		mainView.repaint();
 		
 		JPanel currentTurn = currentTurn();
 
-		
-		mainView.add(currentTurn, BorderLayout.LINE_START);
+		JScrollPane pane = new JScrollPane(currentTurn);
+		mainView.add(pane, BorderLayout.LINE_START);
 		mainView.revalidate();
 		mainView.repaint();
 		
